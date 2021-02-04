@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.name }}
+  labels:
+    {{- include "mockhelmrepo.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.proxy.portName }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "mockhelmrepo.selectorLabels" . | nindent 4 }}

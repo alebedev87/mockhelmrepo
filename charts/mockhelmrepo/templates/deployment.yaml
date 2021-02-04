@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    {{- include "mockhelmrepo.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "mockhelmrepo.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mockhelmrepo.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        # proxy to chartmuseum (repo container)
+        - name: proxy
+          image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.pullPolicy }}
+          env:
+            - name: "PROXY_PATH"
+              value: "{{.Values.proxy.config.path}}"
+            - name: "PROXY_TO_HOST"
+              value: "{{.Values.proxy.config.host}}"
+            - name: "PROXY_TO_PORT"
+              value: "{{.Values.proxy.config.port}}"
+          ports:
+            - name: "{{.Values.proxy.portName}}"
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{.Values.proxy.portName}}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{.Values.proxy.portName}}
+          resources:
+            {{- toYaml .Values.proxy.resources | nindent 12 }}
+        - name: repo
+          image: "{{ .Values.repo.image.repository }}:{{ .Values.repo.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.pullPolicy }}
+          args:
+            - "--basic-auth-user={{.Values.secret.credentials.username}}"
+            - "--basic-auth-pass={{.Values.secret.credentials.password}}"
+            - "--chart-url=http://{{.Values.service.name}}/{{.Values.proxy.config.path}}"
+          ports:
+            - name: repo
+              containerPort: {{.Values.proxy.config.port}}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.repo.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,39 @@
+replicaCount: 1
+
+pullPolicy: IfNotPresent
+
+proxy:
+  image:
+    repository: alebedev87/mockreverseproxy
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+  portName: http
+  resources: {}
+  config:
+    path: helm-repo
+    host: localhost
+    port: 8080
+
+repo:
+  image:
+    repository: alebedev87/mockhelmrepo
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+  resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+service:
+  name: museum
+  type: ClusterIP
+  port: 80
+
+secret:
+  name: credentials
+  credentials:
+    username: test
+    password: test

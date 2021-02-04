@@ -1,0 +1,6 @@
+apiVersion: v2
+name: mockhelmrepo
+description: A Helm chart to mock a Helm repository
+type: application
+version: 0.0.1
+appVersion: 0.0.1
